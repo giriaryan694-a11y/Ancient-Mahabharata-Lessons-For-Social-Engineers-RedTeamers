@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="The Art of Strategic Warfare — Ancient Mahabharata lessons reframed as tactical principles for modern red-teamers and security researchers (ethical use only)." />
+  <meta name="author" content="Aryan Giri" />
+  <title>The Art of Strategic Warfare — Red Team Edition</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Merriweather:wght@400;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* Dark theme variables (default) */
+      --bg-900: #060608;
+      --bg-800: #071028;
+      --panel: rgba(255,255,255,0.03);
+      --glass-border: rgba(255,255,255,0.06);
+      --text: #e6eef6;
+      --muted: #9aa5b1;
+      --accent: #ffd84d;
+      --neon-blue: #00d4ff;
+      --neon-red: #ff6b6b;
+      --card-radius: 12px;
+      --transition: 300ms;
+      --link: var(--neon-blue);
+    }
+
+    /* Light theme overrides */
+    html[data-theme="light"] {
+      --bg-900: #f6f8fa;
+      --bg-800: #eef2f6;
+      --panel: rgba(10,10,12,0.03);
+      --glass-border: rgba(0,0,0,0.06);
+      --text: #0b1220;
+      --muted: #4b5563;
+      --accent: #b7791f;
+      --neon-blue: #0366d6;
+      --neon-red: #d64545;
+      --link: var(--neon-blue);
+    }
+
+    /* Basic reset */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(0,20,40,0.65), transparent),
+        linear-gradient(180deg,var(--bg-900),var(--bg-800));
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.6;
+      transition: background var(--transition) ease, color var(--transition) ease;
+      padding: 20px;
+    }
+
+    /* THEME TOGGLE (top-left) */
+    .theme-toggle {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 9999;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toggle-wrap {
+      width: 60px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--glass-border);
+      padding: 4px;
+      display:flex;
+      align-items:center;
+      position:relative;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .toggle-knob {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #fff, #eaeaea);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      transform: translateX(0);
+      transition: transform var(--transition) cubic-bezier(.2,.9,.2,1), box-shadow var(--transition);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      color:#022;
+    }
+
+    /* neon glow for dark mode knob when showing moon emoji */
+    html:not([data-theme="light"]) .toggle-knob {
+      background: linear-gradient(180deg,#0f1720,#06111a);
+      color: var(--neon-blue);
+      box-shadow: 0 6px 30px rgba(0,212,255,0.06), 0 0 10px rgba(0,212,255,0.06) inset;
+    }
+
+    /* when light theme activated - move knob right and change look */
+    html[data-theme="light"] .toggle-knob {
+      transform: translateX(26px);
+      background: linear-gradient(180deg,#fff,#f3f3f3);
+      color: var(--neon-red);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    .toggle-label {
+      font-size: 0.9rem;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      transition: color var(--transition);
+      background: rgba(255,255,255,0.01);
+      border: 1px solid rgba(255,255,255,0.02);
+    }
+
+    /* Hero + layout (based on prior design) */
+    .hero {
+      min-height: 60vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:48px 20px;
+    }
+    .hero-inner{ width:100%; max-width:1100px; display:grid; grid-template-columns:1fr 420px; gap:32px; align-items:center; }
+    .title-block{
+      padding:28px;
+      border-radius:var(--card-radius);
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid var(--glass-border);
+      box-shadow:0 8px 30px rgba(0,0,0,0.45);
+      backdrop-filter: blur(6px);
+    }
+    h1{ margin:0 0 8px 0; font-family:"Merriweather",serif; font-size:2rem; color:var(--accent); letter-spacing:0.4px; }
+    .subtitle{ color:var(--neon-blue); margin-bottom:12px; font-weight:600; }
+    .lead{ color:var(--muted); font-size:1rem; margin-bottom:14px; }
+
+    .terminal {
+      padding:18px;
+      border-radius:12px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(10,10,20,0.4));
+      border:1px solid rgba(255,255,255,0.03);
+      font-family:"Source Code Pro", monospace;
+      color: #a8f0ff;
+      box-shadow:0 10px 40px rgba(0,0,0,0.45);
+      min-height:240px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .container { max-width:1100px; margin:0 auto; padding:28px 20px 80px; }
+    .section { margin-bottom:26px; background:var(--panel); border-radius:12px; padding:26px; border:1px solid var(--glass-border); transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.4s; opacity:0; transform: translateY(12px); }
+    .section.visible { opacity:1; transform: translateY(0); }
+    .section:hover { transform: translateY(-6px); box-shadow: 0 18px 50px rgba(0,0,0,0.6); }
+    .section h2 { margin:0 0 10px 0; color:var(--neon-blue); font-family:"Merriweather",serif; font-size:1.4rem; }
+    .section h3 { color: var(--neon-red); margin-top:14px; }
+    .section p { color: var(--text); margin-bottom:12px; text-align: justify; }
+    .insight { background: rgba(255,255,255,0.04); border-left: 4px solid var(--accent); padding: 12px 14px; border-radius:8px; color: var(--text); }
+    .final { background: rgba(255,255,255,0.03); border: 1px dashed var(--glass-border); padding: 16px; border-radius: 10px; margin-top: 20px; }
+
+    footer { text-align:center; color:var(--muted); padding:26px 12px; font-size:0.92rem; border-top:1px dashed rgba(255,255,255,0.03); margin-top:40px; }
+
+    a.inline { color: var(--link); text-decoration: none; font-weight: 600; }
+
+    @media (max-width:980px){
+      .hero-inner{ grid-template-columns: 1fr; }
+      .terminal{ order: 2; }
+      .title-block{ order: 1; }
+    }
+    @media (max-width:520px){
+      h1{ font-size:1.6rem; }
+      .lead{ font-size:0.96rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- THEME TOGGLE -->
+  <div class="theme-toggle" role="region" aria-label="Theme switcher">
+    <div class="toggle-wrap" id="toggleWrap" title="Toggle theme (stored in cookie)">
+      <div class="toggle-knob" id="toggleKnob" aria-hidden>🌙</div>
+    </div>
+    <div class="toggle-label" id="toggleLabel">Dark</div>
+  </div>
+
+  <!-- HERO -->
+  <header class="hero" role="banner">
+    <div class="hero-inner">
+      <div class="title-block" aria-labelledby="main-title">
+        <h1 id="main-title">The Art of Strategic Warfare</h1>
+        <div class="subtitle">Ancient Lessons for Modern Minds</div>
+        <p class="lead">Strategic, psychological, and ethical perspectives on influence, timing, and engineered outcomes — translated into practical red-team principles.</p>
+      </div>
+
+      <aside class="terminal" aria-label="Intro terminal">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div>
+          <div style="flex:1;text-align:right;color:var(--muted);font-size:0.85rem">Red Team Edition • v2.0</div>
+        </div>
+        <pre id="terminal-text" style="white-space:pre-wrap;margin:8px 0;font-size:0.95rem;color:#a8f0ff"></pre>
+        <div style="color:var(--muted);font-size:0.9rem">Tip: This piece is for authorized practice and research. See Ethics & Scope below.</div>
+      </aside>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="container" role="main">
+    <section id="ethics" class="section" aria-labelledby="ethics-title">
+      <h2 id="ethics-title">Ethics & Scope — Read first</h2>
+      <p>This work interprets episodes from ancient narrative as lenses for strategic thinking applicable to red teaming, influence campaigns, and defensive research. It is published for <strong>educational, defensive, and authorized offensive-security testing only</strong>. Do <strong>not</strong> apply these principles against people, organizations, or systems without explicit written authorization (Rules of Engagement). Unauthorized use may be illegal and unethical.</p>
+      <div style="height:12px"></div>
+      <p style="background:rgba(255,255,255,0.02);padding:12px;border-radius:8px"><strong>Quick ROE:</strong> Written authorization; clear scope & exclusions; non-destructive testing unless explicitly permitted; defined data-handling and escalation procedures.</p>
+    </section>
+
+    <section class="section" aria-labelledby="intro-title">
+      <h2 id="intro-title">For the Thinkers & the Seekers</h2>
+      <p><strong>If you only accept truths that align with your beliefs—this article may challenge you.</strong></p>
+      <p>The Mahabharata isn’t just a story of gods and heroes; it’s a grand manual of strategy, psychology, and consequence. Hidden within its events are timeless lessons in decision-making, human behavior, and calculated foresight.</p>
+      <p>This is not about questioning divinity—it’s about studying strategy. If you believe only swords win wars, you’ve misunderstood history. Sri Krishna, beyond being divine, was also the supreme strategist—a mind who mastered psychological warfare long before the term existed.</p>
+      <p>He demonstrated how words can become weapons, how emotions can be leveraged, and how the mind can win battles before they begin.</p>
+    </section>
+
+    <section class="section" aria-labelledby="lesson1">
+      <h2 id="lesson1">Lesson 1: The Turning Point — Engineering the Inevitable</h2>
+      <p>The most critical moment in the Mahabharata came when Yudhishthira lost everything in a game of dice—his kingdom, his brothers, himself, and finally, Draupadi. Shakuni’s plan was simple: destroy the Pandavas. But what he didn’t realize—he himself had become a piece on a far greater chessboard.</p>
+      <p>If Sri Krishna had wanted, he could have prevented it. But he didn’t. Because his goal was not the dice game—it was the awakening of destiny.</p>
+      <p>When silence filled the court during Draupadi’s humiliation, even the greatest warriors stood still. Krishna waited—not out of indifference, but because pain sometimes forges purpose. That day, the seed of the great war was planted—not out of revenge, but out of transformation.</p>
+
+      <div class="insight">
+        <strong>🔥 Strategic Insight:</strong>
+        <ul style="margin:8px 0 0 18px; color:var(--text)">
+          <li>Controlled failure builds stronger motivation than easy victory.</li>
+          <li>Emotional pain can ignite unbreakable resolve.</li>
+          <li>Sometimes allowing loss is the first step toward inevitable triumph.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="lesson2">
+      <h2 id="lesson2">Lesson 2: The Crisis of Arjuna — The Psychology of Reframing</h2>
+      <p>On the battlefield of Kurukshetra, Arjuna’s hands trembled. “How can I fight my own family, my teachers, my elders?” he asked. It wasn’t fear—it was emotional conflict.</p>
+      <p>Krishna didn’t give him courage; he gave him clarity. He reframed the entire reality:</p>
+      <p style="font-style:italic">“You are not fighting people—you are fighting injustice. The soul is immortal; your duty is eternal.”</p>
+      <p>And just like that, Krishna replaced guilt with purpose. Arjuna’s hesitation transformed into conviction.</p>
+
+      <div class="insight">
+        <strong>🎯 Social Engineering Insight:</strong>
+        <ul style="margin:8px 0 0 18px; color:var(--text)">
+          <li>True persuasion doesn’t force—it transforms perception.</li>
+          <li>Reframing the narrative changes resistance into duty.</li>
+          <li>The greatest motivator is not fear, but purpose.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="lesson3">
+      <h2 id="lesson3">Lesson 3: Bhishma’s Fall — Exploiting Moral Constraints</h2>
+      <p>Bhishma Pitamah was invincible—no one could defeat him in combat. But Krishna understood: every warrior, no matter how strong, has a weakness.</p>
+      <p>Bhishma’s weakness wasn’t his ego—it was his vow. He swore never to raise arms against a woman. So Krishna placed Shikhandi in front of Arjuna. Bound by his own principle, Bhishma couldn’t fight back. He fell—not by power, but by psychology.</p>
+
+      <div class="insight">
+        <strong>🧠 Red Teaming Lesson:</strong>
+        <ul style="margin:8px 0 0 18px; color:var(--text)">
+          <li>Every strong system has rigid moral or structural rules—these can be exploited.</li>
+          <li>If direct attack fails, use indirect strategy.</li>
+          <li>When principles are inflexible, they become predictable.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="lesson4">
+      <h2 id="lesson4">Lesson 4: Strategy Over Strength — The Choice of Armies</h2>
+      <p>Before the war began, both Arjuna and Duryodhana went to Krishna. He offered two choices: his mighty Narayani army, or himself unarmed. Duryodhana chose the army. Arjuna chose Krishna. That single choice decided the outcome of the war.</p>
+      <p>Arjuna gained wisdom, guidance, and strategy—far more powerful than any weapon. Duryodhana had numbers, but no direction.</p>
+
+      <div class="insight">
+        <strong>⚔️ Leadership Insight:</strong>
+        <ul style="margin:8px 0 0 18px; color:var(--text)">
+          <li>Strategy outweighs strength.</li>
+          <li>Guidance is more valuable than resources.</li>
+          <li>Intelligence and clarity of purpose define real victory.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="framework" class="section" aria-labelledby="framework-title">
+      <h2 id="framework-title">Final Synthesis: The Mahabharata as a Framework for Modern Strategy</h2>
+      <p><strong>Think Long-Term:</strong> Every move Krishna made was for the endgame.</p>
+      <p><strong>Use Psychology:</strong> The greatest wars are fought in the human mind.</p>
+      <p><strong>Engineer Inevitability:</strong> Create outcomes through guided perception.</p>
+      <p><strong>Exploit Constraints:</strong> Find strength in flexibility.</p>
+      <p><strong>Reframe Reality:</strong> Shift narratives to dissolve fear and guilt.</p>
+      <p><strong>Be Patient:</strong> Sometimes not acting is the most strategic action.</p>
+
+      <div class="final">
+        <h3>Conclusion</h3>
+        <p>The Mahabharata isn’t just mythology—it’s a timeless study in human behavior, ethics, and strategy. Every event teaches us how to navigate conflict—externally in the world, and internally within ourselves.</p>
+        <blockquote style="margin-top:12px;color:var(--muted);">“The smartest warrior is the one who knows when to fight, and when to let destiny unfold.”</blockquote>
+        <p style="margin-top:12px">✍️ Written by <strong>Aryan Giri</strong></p>
+        <p style="font-size:0.9rem;color:var(--muted)">(For educational and philosophical reflection — not to glorify violence or disrespect any belief.)</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>© 2025 <strong>Aryan Giri</strong> · Red Team Edition v2.0</div>
+    <small style="display:block;margin-top:8px;color:var(--muted)">Published for educational and authorized red-team research only.</small>
+  </footer>
+
+  <script>
+    // ---------- Cookie helpers ----------
+    function setCookie(name, value, days) {
+      const expires = new Date(Date.now() + days * 864e5).toUTCString();
+      document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+    }
+    function getCookie(name) {
+      return document.cookie.split('; ').reduce((r, v) => {
+        const parts = v.split('=');
+        return parts[0] === name ? decodeURIComponent(parts.slice(1).join('=')) : r
+      }, '');
+    }
+
+    // ---------- Theme handling ----------
+    const HTML = document.documentElement;
+    const toggleWrap = document.getElementById('toggleWrap');
+    const toggleKnob = document.getElementById('toggleKnob');
+    const toggleLabel = document.getElementById('toggleLabel');
+
+    // Default: dark
+    const saved = getCookie('site_theme'); // 'dark' or 'light'
+    if (saved === 'light') {
+      HTML.setAttribute('data-theme','light');
+      toggleKnob.textContent = '☀️';
+      toggleLabel.textContent = 'Light';
+    } else {
+      // default dark
+      HTML.setAttribute('data-theme','dark');
+      toggleKnob.textContent = '🌙';
+      toggleLabel.textContent = 'Dark';
+    }
+
+    function setTheme(theme) {
+      if (theme === 'light') {
+        HTML.setAttribute('data-theme','light');
+        toggleKnob.textContent = '☀️';
+        toggleLabel.textContent = 'Light';
+        setCookie('site_theme','light', 365);
+      } else {
+        HTML.setAttribute('data-theme','dark');
+        toggleKnob.textContent = '🌙';
+        toggleLabel.textContent = 'Dark';
+        setCookie('site_theme','dark', 365);
+      }
+    }
+
+    // Click to toggle
+    toggleWrap.addEventListener('click', () => {
+      const current = HTML.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      setTheme(current === 'light' ? 'dark' : 'light');
+    });
+
+    // keyboard accessibility
+    toggleWrap.setAttribute('tabindex','0');
+    toggleWrap.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleWrap.click();
+      }
+    });
+
+    // ---------- terminal typing intro ----------
+    (function(){
+      const lines = [
+        "Initializing: Ancient Strategy → Modern Frameworks...",
+        "Mapping narratives to tactical principles...",
+        "Validating ethical constraints (ROE required)...",
+        "Decrypting lessons: timing, framing, constraint analysis...",
+        "Access granted. Scroll to read the framework."
+      ];
+      const target = document.getElementById('terminal-text');
+      let i = 0, charIdx = 0;
+
+      function typeLine(line, cb){
+        charIdx = 0;
+        target.textContent += "\\n";
+        function typeChar(){
+          if (charIdx < line.length){
+            target.textContent += line.charAt(charIdx);
+            charIdx++;
+            setTimeout(typeChar, 12 + Math.random()*18);
+          } else {
+            target.textContent += "\\n";
+            setTimeout(cb, 240);
+          }
+        }
+        typeChar();
+      }
+
+      function next(){
+        if (i < lines.length) {
+          typeLine(lines[i], () => { i++; setTimeout(next, 420); });
+        } else {
+          target.textContent += "\\n[Tip] Use the Lab-only badge and follow ROE for practical exercises.";
+        }
+      }
+      setTimeout(next, 450);
+    })();
+
+    // ---------- reveal animation ----------
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) e.target.classList.add('visible');
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.section').forEach(s => obs.observe(s));
+  </script>
+</body>
+</html>
